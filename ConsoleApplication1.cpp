@@ -49,14 +49,38 @@ int main()
 
 // Task 4
 #define m 100
-#define n 100
+#define n 1000
 #define k 1000
-int main()
-{
+
+void print_res(double** A, double** B, int number_of_threads) {
 	double time_spent = 0.0;
 	clock_t begin = clock();
+	double ** C;
+	C = new double*[m];
+#pragma omp parallel for num_threads(number_of_threads)
+	for (int i = 0; i < m; i++)
+	{
+		C[i] = new double[n];
+		for (int j = 0; j < n; j++)
+		{
+			C[i][j] = 0;
+			for (int g = 0; g < k; g++)
+				C[i][j] += A[i][g] * B[g][j];
+		}
+	}
+	clock_t end = clock();
+	time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+	printf("Number of threads: %d \nThe time: %f  seconds\n", number_of_threads, time_spent);
+	for (int i = 0; i < m; ++i)
+		delete[] C[i];
+	delete[] C;
+}
+
+int main()
+{
+	printf("M = %d, N = %d, K = %d \n", m, n, k);
 	int i, j;
-	double** A, ** B, ** C;
+	double** A, ** B;
 	A = new double*[m];
 	B = new double*[k];
 	for (int i = 0; i < m; i++) {
@@ -75,22 +99,18 @@ int main()
 			B[i][j] = i * (j+1);
 		}
 	}
-	C = new double*[m];
-	int number_of_threads = 4;
-#pragma omp parallel for num_threads(number_of_threads)
-	for (int i = 0; i < m; i++)
-	{
-		C[i] = new double[n];
-		for (int j = 0; j < n; j++)
-		{
-			C[i][j] = 0;
-			for (int g = 0; g < k; g++)
-				C[i][j] += A[i][g] * B[g][j];
-		}
-	}
 
-	clock_t end = clock();
-	time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-	printf("Number of threads: %d \nThe time: %f  seconds\n", number_of_threads, time_spent);
+
+	print_res(A, B, 2);
+	print_res(A, B, 4);
+	print_res(A, B, 8);
+	print_res(A, B, 1);
+
+	for (i = 0; i < m; ++i)
+		delete[] A[i];
+	delete[] A;
+	for (i = 0; i < k; ++i)
+		delete[] B[i];
+	delete[] B;
 	return 0;
 }
